@@ -66,11 +66,18 @@
       state: started
       enabled: yes
 
-  - name: Replace old hostname with new hostname
-    ansible.builtin.replace:
-      path: /etc/mongod.conf
-      regexp: '127.0.0.1'
-      replace: '0.0.0.0'
+  - name: get the users count
+    ansible.builtin.command:  mongo --host mongodb.ramya.website --quiet --eval 'db = db.getSiblingDB("users"); db.users.count()'
+    register: user_count
+
+  # - name: print the count
+  #   ansible.builtin.debug:
+  #     msg: "product count: {{user_count}}"
+
+  - name: load user data
+    ansible.builtin.command: mongo --host mongodb.ramya.website < /app/schema/user.js
+    when: user_count.stdout == "0" # keep double quotes
+
 
   - name: Restart mongodb
     ansible.builtin.service:
